@@ -7,9 +7,12 @@ from html2image import Html2Image
 import requests
 import os
 
+# Path to chromedriver executable
+CHROMEDRIVER_PATH = r"C:\Users\Garrett\Documents\chromedriver\chromedriver.exe"
+
 # Function to capture screenshot using html2image
 def capture_screenshot(html_content, output_path):
-    hti = Html2Image()
+    hti = Html2Image(browser_executable=CHROMEDRIVER_PATH)
     hti.screenshot(html_str=html_content, save_as=output_path, size=(1200, 800))
 
 # Function to encode image to base64
@@ -70,16 +73,20 @@ if uploaded_file is not None:
     st.write("Visualize the data using PyGWalker:")
     
     # Generate the HTML using PyGWalker with increased height
-    pyg_html = pyg.to_html(df, spec="./gw_config.json")
+    pyg_html = pyg.walk(df, return_html=True)
     
     # Embed the HTML into the Streamlit app
-    components.html(pyg_html, height=800, scrolling=False)
+    components.html(pyg_html, height=800, scrolling=True)
     
     # Button to analyze the visualization
     if st.button("Analyze Visualization"):
         # Capture screenshot
         screenshot_path = "visualization.png"
-        capture_screenshot(pyg_html, screenshot_path)
+        try:
+            capture_screenshot(pyg_html, screenshot_path)
+        except Exception as e:
+            st.error(f"Error capturing screenshot: {e}")
+            st.stop()
         
         # Encode image
         base64_image = encode_image(screenshot_path)
@@ -88,15 +95,17 @@ if uploaded_file is not None:
         preset_prompt = "Analyze this data visualization and provide insights on the main trends or patterns shown."
         
         # Call GPT-4 Vision API
-        response = analyze_image_with_gpt4(base64_image, preset_prompt)
-        
-        # Display response
-        if 'choices' in response and len(response['choices']) > 0:
-            analysis = response['choices'][0]['message']['content']
-            st.write("Analysis:")
-            st.write(analysis)
-        else:
-            st.write("Error in API response")
+        try:
+            response = analyze_image_with_gpt4(base64_image, preset_prompt)
+            # Display response
+            if 'choices' in response and len(response['choices']) > 0:
+                analysis = response['choices'][0]['message']['content']
+                st.write("Analysis:")
+                st.write(analysis)
+            else:
+                st.write("Error in API response")
+        except Exception as e:
+            st.error(f"Error calling GPT-4 Vision API: {e}")
         
         # Remove the screenshot file
         os.remove(screenshot_path)
