@@ -2,24 +2,25 @@ import streamlit as st
 import pandas as pd
 import pygwalker as pyg
 
-# Sample Data
-data = {
-    "Name": ["Alice", "Bob", "Charlie", "David", "Eve"],
-    "Age": [24, 27, 22, 32, 29],
-    "City": ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"],
-    "Score": [85, 92, 88, 76, 95]
-}
-
-# Convert to DataFrame
-df = pd.DataFrame(data)
-
 # Set Streamlit title
 st.title("PyGWalker with Streamlit")
 
-# Display DataFrame
-st.write("Here is the sample data:")
-st.dataframe(df)
+# Instructions
+st.write("Upload a CSV file to visualize the data using PyGWalker.")
 
-# Display PyGWalker
-st.write("Visualize the data using PyGWalker:")
-pyg.walk(df)
+# Upload CSV file
+uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
+
+if uploaded_file is not None:
+    # Read the CSV file
+    df = pd.read_csv(uploaded_file)
+
+    # Display DataFrame
+    st.write("Here is the uploaded data:")
+    st.dataframe(df)
+
+    # Display PyGWalker
+    st.write("Visualize the data using PyGWalker:")
+    pyg.walk(df)
+else:
+    st.write("Please upload a CSV file to proceed.")
