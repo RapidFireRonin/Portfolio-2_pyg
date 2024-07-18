@@ -4,3 +4,4 @@ pandas
 pillow
 requests
 html2image
+pyppeteer

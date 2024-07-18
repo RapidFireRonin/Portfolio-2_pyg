@@ -3,17 +3,19 @@ import pandas as pd
 import pygwalker as pyg
 import streamlit.components.v1 as components
 import base64
-from io import BytesIO
-from PIL import Image
+import asyncio
+from pyppeteer import launch
 import requests
-import json
-from html2image import Html2Image
 import os
 
-# Function to capture screenshot using html2image
-def capture_screenshot(html_content, output_path):
-    hti = Html2Image()
-    hti.screenshot(html_str=html_content, save_as=output_path, size=(1200, 800))
+# Function to capture screenshot using pyppeteer
+async def capture_screenshot(html_content, output_path):
+    browser = await launch(headless=True, args=['--no-sandbox'])
+    page = await browser.newPage()
+    await page.setContent(html_content)
+    await page.setViewport({'width': 1200, 'height': 800})
+    await page.screenshot({'path': output_path, 'fullPage': True})
+    await browser.close()
 
 # Function to encode image to base64
 def encode_image(image_path):
@@ -82,7 +84,7 @@ if uploaded_file is not None:
     if st.button("Analyze Visualization"):
         # Capture screenshot
         screenshot_path = "visualization.png"
-        capture_screenshot(pyg_html, screenshot_path)
+        asyncio.get_event_loop().run_until_complete(capture_screenshot(pyg_html, screenshot_path))
         
         # Encode image
         base64_image = encode_image(screenshot_path)
