@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import pygwalker as pyg
+import streamlit.components.v1 as components
 
 # Set Streamlit title
 st.title("Interactive Data Visualization with PyGWalker")
@@ -14,13 +15,18 @@ uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 if uploaded_file is not None:
     # Read the CSV file
     df = pd.read_csv(uploaded_file)
-
+    
     # Display DataFrame
     st.write("Here is the uploaded data:")
     st.dataframe(df)
-
+    
     # Display PyGWalker
     st.write("Visualize the data using PyGWalker:")
-    pyg.walk(df)
+    
+    # Generate the HTML using PyGWalker
+    pyg_html = pyg.to_html(df)
+    
+    # Embed the HTML into the Streamlit app
+    components.html(pyg_html, height=1000, scrolling=True)
 else:
     st.write("Please upload a CSV file to proceed.")
