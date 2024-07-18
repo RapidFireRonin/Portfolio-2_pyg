@@ -7,37 +7,13 @@ from io import BytesIO
 from PIL import Image
 import requests
 import json
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-import time
+from html2image import Html2Image
 import os
 
-# Function to capture screenshot
+# Function to capture screenshot using html2image
 def capture_screenshot(html_content, output_path):
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    
-    driver = webdriver.Chrome(options=options)
-    
-    # Save the HTML content to a temporary file
-    with open("temp.html", "w", encoding="utf-8") as f:
-        f.write(html_content)
-    
-    # Open the temporary HTML file
-    driver.get("file://" + os.path.abspath("temp.html"))
-    
-    # Wait for the page to load
-    time.sleep(5)
-    
-    # Capture screenshot
-    driver.save_screenshot(output_path)
-    
-    driver.quit()
-    
-    # Remove the temporary HTML file
-    os.remove("temp.html")
+    hti = Html2Image()
+    hti.screenshot(html_str=html_content, save_as=output_path, size=(1200, 800))
 
 # Function to encode image to base64
 def encode_image(image_path):
@@ -65,7 +41,7 @@ def analyze_image_with_gpt4(base64_image, prompt):
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:image/jpeg;base64,{base64_image}"
+                            "url": f"data:image/png;base64,{base64_image}"
                         }
                     }
                 ]
