@@ -2,12 +2,86 @@ import streamlit as st
 import pandas as pd
 import pygwalker as pyg
 import streamlit.components.v1 as components
+import base64
+from io import BytesIO
+from PIL import Image
+import requests
+import json
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import time
+import os
+
+# Function to capture screenshot
+def capture_screenshot(html_content, output_path):
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    
+    driver = webdriver.Chrome(options=options)
+    
+    # Save the HTML content to a temporary file
+    with open("temp.html", "w", encoding="utf-8") as f:
+        f.write(html_content)
+    
+    # Open the temporary HTML file
+    driver.get("file://" + os.path.abspath("temp.html"))
+    
+    # Wait for the page to load
+    time.sleep(5)
+    
+    # Capture screenshot
+    driver.save_screenshot(output_path)
+    
+    driver.quit()
+    
+    # Remove the temporary HTML file
+    os.remove("temp.html")
+
+# Function to encode image to base64
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+# Function to call ChatGPT Vision API
+def analyze_image_with_gpt4(base64_image, prompt):
+    api_key = st.secrets["OPENAI_API_KEY"]
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
+
+    payload = {
+        "model": "gpt-4-vision-preview",
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": prompt
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                        }
+                    }
+                ]
+            }
+        ],
+        "max_tokens": 300
+    }
+
+    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+    return response.json()
 
 # Set page to wide mode
 st.set_page_config(layout="wide")
 
 # Set Streamlit title
-st.title("Interactive Data Visualization with PyGWalker")
+st.title("Interactive Data Visualization with PyGWalker and ChatGPT Vision")
 
 # Instructions
 st.write("Upload a CSV file to visualize the data using PyGWalker.")
@@ -27,6 +101,32 @@ if uploaded_file is not None:
     
     # Embed the HTML into the Streamlit app
     components.html(pyg_html, height=800, scrolling=False)
+    
+    # Button to analyze the visualization
+    if st.button("Analyze Visualization"):
+        # Capture screenshot
+        screenshot_path = "visualization.png"
+        capture_screenshot(pyg_html, screenshot_path)
+        
+        # Encode image
+        base64_image = encode_image(screenshot_path)
+        
+        # Set preset prompt
+        preset_prompt = "Analyze this data visualization and provide insights on the main trends or patterns shown."
+        
+        # Call GPT-4 Vision API
+        response = analyze_image_with_gpt4(base64_image, preset_prompt)
+        
+        # Display response
+        if 'choices' in response and len(response['choices']) > 0:
+            analysis = response['choices'][0]['message']['content']
+            st.write("Analysis:")
+            st.write(analysis)
+        else:
+            st.write("Error in API response")
+        
+        # Remove the screenshot file
+        os.remove(screenshot_path)
 else:
     st.write("Please upload a CSV file to proceed.")
 
