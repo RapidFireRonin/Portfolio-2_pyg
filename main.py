@@ -3,7 +3,7 @@ import pandas as pd
 import pygwalker as pyg
 
 # Set Streamlit title
-st.title("PyGWalker with Streamlit")
+st.title("Interactive Data Visualization with PyGWalker")
 
 # Instructions
 st.write("Upload a CSV file to visualize the data using PyGWalker.")
