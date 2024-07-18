@@ -3,13 +3,19 @@ import pandas as pd
 import pygwalker as pyg
 import streamlit.components.v1 as components
 import base64
-from PIL import Image
+from html2image import Html2Image
 import requests
-import io
+import os
+
+# Function to capture screenshot using html2image
+def capture_screenshot(html_content, output_path):
+    hti = Html2Image()
+    hti.screenshot(html_str=html_content, save_as=output_path, size=(1200, 800))
 
 # Function to encode image to base64
-def encode_image(image_bytes):
-    return base64.b64encode(image_bytes).decode('utf-8')
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
 
 # Function to call ChatGPT Vision API
 def analyze_image_with_gpt4(base64_image, prompt):
@@ -71,30 +77,29 @@ if uploaded_file is not None:
     
     # Button to analyze the visualization
     if st.button("Analyze Visualization"):
-        # Capture the current view as an image
-        img_bytes = st.experimental_get_query_params().get("screenshot", [None])[0]
-        if img_bytes:
-            img_bytes = base64.b64decode(img_bytes)
-            
-            # Encode image
-            base64_image = encode_image(img_bytes)
-            
-            # Set preset prompt
-            preset_prompt = "Analyze this data visualization and provide insights on the main trends or patterns shown."
-            
-            # Call GPT-4 Vision API
-            response = analyze_image_with_gpt4(base64_image, preset_prompt)
-            
-            # Display response
-            if 'choices' in response and len(response['choices']) > 0:
-                analysis = response['choices'][0]['message']['content']
-                st.write("Analysis:")
-                st.write(analysis)
-            else:
-                st.write("Error in API response")
+        # Capture screenshot
+        screenshot_path = "visualization.png"
+        capture_screenshot(pyg_html, screenshot_path)
+        
+        # Encode image
+        base64_image = encode_image(screenshot_path)
+        
+        # Set preset prompt
+        preset_prompt = "Analyze this data visualization and provide insights on the main trends or patterns shown."
+        
+        # Call GPT-4 Vision API
+        response = analyze_image_with_gpt4(base64_image, preset_prompt)
+        
+        # Display response
+        if 'choices' in response and len(response['choices']) > 0:
+            analysis = response['choices'][0]['message']['content']
+            st.write("Analysis:")
+            st.write(analysis)
         else:
-            st.write("Please interact with the visualization first to generate a screenshot.")
-
+            st.write("Error in API response")
+        
+        # Remove the screenshot file
+        os.remove(screenshot_path)
 else:
     st.write("Please upload a CSV file to proceed.")
 
