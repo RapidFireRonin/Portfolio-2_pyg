@@ -17,6 +17,12 @@ async def capture_screenshot(html_content, output_path):
     await page.screenshot({'path': output_path, 'fullPage': True})
     await browser.close()
 
+# Function to run async code
+def run_async(coro):
+    new_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(new_loop)
+    return new_loop.run_until_complete(coro)
+
 # Function to encode image to base64
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
@@ -84,7 +90,7 @@ if uploaded_file is not None:
     if st.button("Analyze Visualization"):
         # Capture screenshot
         screenshot_path = "visualization.png"
-        asyncio.get_event_loop().run_until_complete(capture_screenshot(pyg_html, screenshot_path))
+        run_async(capture_screenshot(pyg_html, screenshot_path))
         
         # Encode image
         base64_image = encode_image(screenshot_path)
